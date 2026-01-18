@@ -183,3 +183,103 @@ Deployment was verified by:
 
 This confirms that the database schema was correctly designed, deployed, and populated with mock data as required.
 
+
+## Task 3C – API Documentation (Endpoints & Database Interaction)
+
+This section documents the RESTful API endpoints implemented using FastAPI for the Event Management system. Each endpoint performs CRUD operations on MongoDB collections, with validation applied to ensure data integrity. Multimedia files are stored using MongoDB GridFS, with file reference IDs saved in the relevant documents.
+
+---
+
+### Base URLs
+- Local: http://127.0.0.1:8000  
+- Hosted (Vercel): https://event-management-ruddy-gamma.vercel.app
+
+---
+
+## Health & Connectivity
+
+### GET /
+Purpose: Confirms the API is running.  
+Database interaction: None.
+
+### GET /health/db
+Purpose: Confirms MongoDB Atlas connectivity.  
+Database interaction: Executes a MongoDB ping command.
+
+---
+
+## Venues (Collection: `venues`)
+Endpoints:
+- `POST /venues` – Create a venue  
+- `GET /venues` – Retrieve all venues  
+- `GET /venues/{venue_id}` – Retrieve a venue by ID  
+- `PUT /venues/{venue_id}` – Update a venue  
+- `DELETE /venues/{venue_id}` – Delete a venue  
+
+Database interaction:
+- Writes, reads, updates, and deletes documents in the `venues` collection
+- Venue IDs are validated before database operations
+
+---
+
+## Events (Collection: `events`)
+Endpoints:
+- `POST /events` – Create an event linked to a venue  
+- `GET /events` – Retrieve all events  
+- `GET /events/{event_id}` – Retrieve an event by ID  
+- `PUT /events/{event_id}` – Update an event  
+- `DELETE /events/{event_id}` – Delete an event  
+
+Database interaction:
+- Events are stored in the `events` collection
+- `venue_id` must be a valid ObjectId and reference an existing venue
+
+---
+
+## Attendees (Collection: `attendees`)
+Endpoints:
+- `POST /attendees` – Create an attendee  
+- `GET /attendees` – Retrieve all attendees  
+- `GET /attendees/{attendee_id}` – Retrieve an attendee by ID  
+- `PUT /attendees/{attendee_id}` – Update an attendee  
+- `DELETE /attendees/{attendee_id}` – Delete an attendee  
+
+Database interaction:
+- CRUD operations on the `attendees` collection
+- Input data validated using Pydantic models
+
+---
+
+## Bookings (Collection: `bookings`)
+Endpoints:
+- `POST /bookings` – Create a booking  
+- `GET /bookings` – Retrieve all bookings  
+- `GET /bookings/{booking_id}` – Retrieve a booking by ID  
+- `PUT /bookings/{booking_id}` – Update a booking  
+- `DELETE /bookings/{booking_id}` – Delete a booking  
+
+Database interaction:
+- Bookings link `events` and `attendees`
+- Referenced event and attendee must exist
+
+---
+
+## File Storage & Retrieval (MongoDB GridFS)
+
+Multimedia files (venue photos, event posters, and promotional videos) are stored using MongoDB GridFS.
+
+- File data is stored in `fs.files` and `fs.chunks`
+- The generated GridFS file ID is saved in the related venue or event document
+- Files are retrieved and streamed using `StreamingResponse`
+
+GridFS operations use a synchronous MongoDB client, while all other database operations use the asynchronous Motor client.
+
+---
+
+## Validation & Security Notes
+
+- MongoDB ObjectIds are validated before database queries
+- Existence checks enforce relationships between collections
+- Database credentials are stored securely in a `.env` file
+
+
