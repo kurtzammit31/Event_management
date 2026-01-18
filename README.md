@@ -123,62 +123,63 @@ Task 1 successfully establishes a fully functional development environment with 
 
 
 
-## Task 2: Database Schema
+## Task 2 – Database Schema
 
 ### a) Schema Design
 
-The database for the Event Management system was designed using **MongoDB**, following a **document-based NoSQL approach**. The schema was created and visualised using **MongoDB Compass**, allowing flexible data modelling and easy inspection of collections and documents.
+The database for the Event Management system was designed using **MongoDB**, following a **document-based NoSQL approach**. The schema was designed and visualised using **MongoDB Compass**, allowing flexible data modelling and clear representation of relationships between system entities.
 
 The database is named **`event_management_db`** and contains the following collections:
 
-- **venues**  
-  Stores information about event venues, including:
-  - `name` (string)
-  - `address` (string)
-  - `capacity` (number)
+#### venues
+Stores information related to event venues:
+- `name` (string)
+- `address` (string)
+- `capacity` (number)
 
-- **events**  
-  Stores event details such as:
-  - `title` (string)
-  - `description` (string)
-  - `date` (ISODate)
-  - `venue_id` (ObjectId – reference to venues)
-  - `price` (number)
+#### events
+Stores information related to events:
+- `name` (string)
+- `description` (string, optional)
+- `venue_id` (string – ObjectId reference to `venues`)
+- `date` (string – ISO formatted date)
+- `max_attendees` (number)
 
-- **attendees**  
-  Stores attendee information, including:
-  - `name` (string)
-  - `email` (string)
-  - `phone` (string)
+#### attendees
+Stores information about people attending events:
+- `name` (string)
+- `email` (string)
+- `phone` (string, optional)
 
-- **bookings**  
-  Represents the relationship between attendees and events:
-  - `event_id` (ObjectId – reference to events)
-  - `attendee_id` (ObjectId – reference to attendees)
-  - `booking_date` (ISODate)
-  - `tickets` (number)
+#### bookings
+Represents ticket bookings made by attendees:
+- `event_id` (string – ObjectId reference to `events`)
+- `attendee_id` (string – ObjectId reference to `attendees`)
+- `tickets` (number)
+- `booking_date` (string – ISO formatted date)
 
-- **multimedia**  
-  Stores media related to events and venues:
-  - `type` (string – image/video)
-  - `url` (string)
-  - `event_id` or `venue_id` (ObjectId)
-  - `description` (string)
+#### multimedia
+Represents multimedia assets related to events and venues, such as:
+- event posters
+- promotional videos
+- venue photos  
 
-This schema design allows flexible expansion while maintaining clear relationships between events, venues, attendees, and bookings, which is suitable for an event management platform.
+Multimedia records are associated with either an event or a venue through reference identifiers.
+
+This schema design maintains clear relationships between venues, events, attendees, and bookings while remaining flexible and scalable, making it suitable for an event management platform.
 
 ---
 
 ### b) Schema Deployment
 
-The schema was deployed using **MongoDB Atlas**, with the database hosted in the cloud. A cluster was created and secured using MongoDB Atlas security features, including database user authentication and IP address whitelisting.
+The database schema was deployed using **MongoDB Atlas**, with the database hosted in the cloud. A cluster was created and configured using MongoDB Atlas tools, including secure database user authentication and IP address whitelisting.
 
-The collections were created and populated using **MongoDB Compass**. Each collection was populated with **mock data** in JSON format to simulate realistic usage of the system, including sample venues, events, attendees, bookings, and multimedia records.
+The collections were created using **MongoDB Compass**, and each collection was populated with **mock data** in JSON format to simulate realistic system usage. This includes sample venues, events, attendees, bookings, and multimedia references.
 
-Successful deployment and population were verified by:
-- Viewing collections and documents in MongoDB Compass
-- Connecting the database to a **FastAPI backend** using the Motor (AsyncIO) driver
-- Confirming database connectivity through a health-check API endpoint
+Deployment was verified by:
+- Viewing collections and documents in **MongoDB Compass**
+- Successfully connecting the database to the FastAPI application
+- Confirming database accessibility through test queries
 
-This confirms that the database schema was correctly designed, deployed, and populated with test data as required.
+This confirms that the database schema was correctly designed, deployed, and populated with mock data as required.
 
