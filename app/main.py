@@ -1,24 +1,39 @@
+# FastAPI framework and HTTP utilities
 from fastapi import FastAPI
-from motor.motor_asyncio import AsyncIOMotorClient
-from dotenv import load_dotenv
-from bson import ObjectId
+from fastapi.responses import StreamingResponse
 from fastapi import HTTPException
+from fastapi import UploadFile, File
+
+# MongoDB async driver (Motor) for normal CRUD operations
+from motor.motor_asyncio import AsyncIOMotorClient
+
+# MongoDB ObjectId handling
+from bson import ObjectId
+
+# Data validation and modelling
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from fastapi import UploadFile, File
-from fastapi.responses import StreamingResponse
+
+# Synchronous MongoDB client used ONLY for GridFS operations
 from pymongo import MongoClient
 import gridfs
+
+# Environment variable handling
+from dotenv import load_dotenv
 import io
 import os
 
+# Load environment variables from .env file
 load_dotenv()
 
+# MongoDB connection configuration
 MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = os.getenv("DB_NAME", "event_management_db")
 
+# Create FastAPI application instance
 app = FastAPI(title="Event Management API")
 
+# Asynchronous MongoDB client for CRUD operations
 client = AsyncIOMotorClient(MONGO_URI)
 db = client[DB_NAME]
 
@@ -33,6 +48,10 @@ fs = gridfs.GridFS(sync_db)
 
 @app.get("/")
 async def root():
+    """
+    Simple endpoint to confirm that the API is running.
+    Does not interact with the database.
+    """
     return {"message": "API is running"}
 
 
@@ -47,11 +66,19 @@ async def health_db():
 # ----------------------------
 
 class VenueIn(BaseModel):
+    """
+    Input model for venue creation and updates.
+    Validation rules help prevent malformed or malicious input.
+    """
     name: str = Field(..., min_length=2)
     address: str = Field(..., min_length=3)
     capacity: int = Field(..., ge=1)
 
 class VenueOut(VenueIn):
+    """
+    Output model returned by the API.
+    Includes the MongoDB-generated ID as a string.
+    """
     id: str
 
 def venue_out(doc) -> VenueOut:
@@ -77,6 +104,10 @@ async def list_venues():
 
 @app.get("/venues/{venue_id}", response_model=VenueOut)
 async def get_venue(venue_id: str):
+    """
+    Retrieve a single venue by ID.
+    Validates ObjectId before querying MongoDB to prevent malformed queries.
+    """
     if not ObjectId.is_valid(venue_id):
         raise HTTPException(status_code=400, detail="Invalid venue id")
 
@@ -147,7 +178,7 @@ async def create_event(event: EventIn):
     if not ObjectId.is_valid(event.venue_id):
         raise HTTPException(status_code=400, detail="Invalid venue id")
 
-    # optional: ensure venue exists
+    # ensure venue exists
     venue = await db.venues.find_one({"_id": ObjectId(event.venue_id)})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
@@ -472,18 +503,25 @@ async def get_event_poster(event_id: str):
 
 @app.post("/events/{event_id}/promo-video")
 async def upload_event_video(event_id: str, file: UploadFile = File(...)):
+    """
+    Uploads a promotional video for an event.
+    The file is stored in MongoDB GridFS, and the file ID is saved
+    in the corresponding event document.
+    """
     if not ObjectId.is_valid(event_id):
         raise HTTPException(status_code=400, detail="Invalid event id")
 
+    # Read binary file content
     content = await file.read()
 
+    # Store file in GridFS
     file_id = fs.put(
         content,
         filename=file.filename,
         contentType=file.content_type,
         meta={"type": "promo_video", "event_id": event_id}
     )
-
+    # Save GridFS file ID in the event document
     await db.events.update_one(
         {"_id": ObjectId(event_id)},
         {"$set": {"promo_video_file_id": str(file_id)}}
@@ -494,6 +532,9 @@ async def upload_event_video(event_id: str, file: UploadFile = File(...)):
 
 @app.get("/events/{event_id}/promo-video")
 async def get_event_video(event_id: str):
+    """
+    Streams a promotional video from MongoDB GridFS.
+    """
     if not ObjectId.is_valid(event_id):
         raise HTTPException(status_code=400, detail="Invalid event id")
 
